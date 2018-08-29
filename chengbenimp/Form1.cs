@@ -95,16 +95,13 @@ namespace chengbenimp
             foreach (DataRow dr in excelDt.Rows)
             {
                 i++;
-                if (string.IsNullOrEmpty(dr["商品代码"].ToString()))
+                if (string.IsNullOrEmpty(dr["商品代码"].ToString())|| string.IsNullOrEmpty(dr["金额"].ToString()) || string.IsNullOrEmpty(dr["表面色"].ToString()) || string.IsNullOrEmpty(dr["存货分类编码"].ToString()))
                 {
                     continue;
                 }
                 else
                 {
-                    if (string.IsNullOrEmpty(dr["金额"].ToString()))
-                        jine = "0";
-                    else
-                        jine = dr["金额"].ToString();
+                    jine = dr["金额"].ToString();
                     string sql = sqlstr.Replace("{金额}", jine).Replace("{序号}", i.ToString()).Replace("{当月开始日期}", startDate)
                                    .Replace("{当月结束日期}", endDate).Replace("{存货分类编码}", dr["存货分类编码"].ToString())
                                    .Replace("{表面色}", dr["表面色"].ToString()).Replace("{商品代码}", dr["商品代码"].ToString());
@@ -112,9 +109,12 @@ namespace chengbenimp
                     count++;
                 }
             }
-            sqllist.Add(uptmpaa);
-            sqllist.Add(uprd10sql);
-            DbHelperSQL.ExecuteSqlTran(sqllist);
+            if (sqllist.Count > 0)
+            {
+                sqllist.Add(uptmpaa);
+                sqllist.Add(uprd10sql);
+                DbHelperSQL.ExecuteSqlTran(sqllist);
+            }
         }
         private void openExcel_Click(object sender, EventArgs e)
         {
@@ -129,7 +129,7 @@ namespace chengbenimp
                 try
                 {
                     excelDt = NPOIExcel.readExcel(strFileName,true);
-                    if (excelDt != null && excelDt.Rows.Count > 1)
+                    if (excelDt != null && excelDt.Rows.Count > 0)
                     {
                         LogRichTextBox.logMesg("文件『" + strFileName + "』读取成功！共读取【" + excelDt.Rows.Count.ToString() + "】条记录。");
                     }
@@ -169,9 +169,13 @@ namespace chengbenimp
                 LogRichTextBox.logMesg("请确认产成品成本分配的会计期间后，再导入！",1);
                 return;
             }
+            if(excelDt == null || excelDt.Rows.Count <=0)
+            {
+                LogRichTextBox.logMesg("请确认已打开EXCEL文件且EXCEL文件中有数据后，再导入！", 1);
+                return;
+            }
             if (!checkExcelData())
                 return;
-
             try
             {
                 LogRichTextBox.logMesg("请等候，开始导入U8系统。。。");
@@ -184,9 +188,12 @@ namespace chengbenimp
                 excelDt.Rows.Clear();//导入成功，清空数据
             }
             catch (Exception ex)
+            {               
+                LogRichTextBox.logMesg("程序出错！错误原因为：" + ex.ToString(), 2);
+            }
+            finally
             {
                 impU8.Enabled = true;
-                LogRichTextBox.logMesg("程序出错！错误原因为：" + ex.ToString(), 2);
             }
         }
 
